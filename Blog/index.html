@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="A practical guide to tokens, JWT, access tokens, refresh tokens, and working Node.js Express authentication.">
+  <title>Complete Guide to Tokens, Access Tokens & Refresh Tokens</title>
+  <style>
+    :root {
+      --bg: #f4f7fb; --surface: #fff; --text: #172033; --muted: #5c687c;
+      --line: #e2e8f0; --primary: #2563eb; --primary-soft: #eff6ff;
+      --green: #15803d; --green-soft: #f0fdf4; --orange: #c2410c;
+      --orange-soft: #fff7ed; --code: #101827; --code-text: #e5edf8;
+      --shadow: 0 12px 35px rgba(20, 35, 60, .07);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.75 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .layout { max-width: 1180px; margin: 0 auto; padding: 34px 20px; }
+    .hero {
+      padding: 48px; border-radius: 22px; color: white;
+      background: linear-gradient(125deg, #142b55, #2563eb 70%, #4f8df7);
+      box-shadow: var(--shadow);
+    }
+    .eyebrow { margin: 0 0 12px; text-transform: uppercase; letter-spacing: .14em; font-size: .75rem; font-weight: 800; opacity: .85; }
+    h1 { max-width: 850px; margin: 0; font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.12; letter-spacing: -.045em; }
+    .hero p { max-width: 760px; margin: 20px 0 0; color: #eaf1ff; font-size: 1.08rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 25px; }
+    .meta span { padding: 6px 12px; border: 1px solid #ffffff55; border-radius: 999px; font-size: .82rem; }
+    .content-grid { display: grid; grid-template-columns: 245px minmax(0, 1fr); gap: 25px; align-items: start; margin-top: 25px; }
+    aside, article { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
+    aside { position: sticky; top: 18px; padding: 22px; }
+    aside h2 { margin: 0 0 12px; font-size: 1rem; }
+    aside a { display: block; padding: 6px 0; color: var(--muted); font-size: .9rem; text-decoration: none; }
+    aside a:hover { color: var(--primary); }
+    article { min-width: 0; padding: clamp(22px, 4vw, 42px); }
+    section { scroll-margin-top: 20px; margin-bottom: 42px; }
+    section:last-child { margin-bottom: 0; }
+    h2 { margin: 0 0 14px; font-size: clamp(1.45rem, 3vw, 1.9rem); line-height: 1.25; letter-spacing: -.025em; }
+    h3 { margin: 25px 0 9px; font-size: 1.12rem; }
+    p { margin: 10px 0 14px; }
+    .muted { color: var(--muted); }
+    ul, ol { padding-left: 24px; }
+    li { margin: 7px 0; }
+    code:not(pre code) { padding: 2px 6px; border-radius: 5px; background: #edf2f8; color: #1d4ed8; font-size: .9em; }
+    pre {
+      overflow-x: auto; margin: 14px 0 20px; padding: 20px;
+      border-radius: 12px; background: var(--code); color: var(--code-text);
+      font: .88rem/1.65 Consolas, "Courier New", monospace; tab-size: 2;
+    }
+    pre code { font: inherit; white-space: pre; }
+    .callout { margin: 18px 0; padding: 16px 18px; border-left: 4px solid var(--primary); border-radius: 9px; background: var(--primary-soft); }
+    .warning { border-left-color: var(--orange); background: var(--orange-soft); }
+    .success { border-left-color: var(--green); background: var(--green-soft); }
+    .jwt-parts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0; }
+    .jwt-part { padding: 16px; border-radius: 12px; text-align: center; }
+    .jwt-part strong { display: block; }
+    .header-part { background: #dbeafe; color: #174ea6; }
+    .payload-part { background: #dcfce7; color: #166534; }
+    .signature-part { background: #ffedd5; color: #9a3412; }
+    .flow { display: grid; gap: 10px; margin: 20px 0; }
+    .flow-step { display: grid; grid-template-columns: 38px 1fr; gap: 13px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 11px; }
+    .num { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; background: var(--primary-soft); color: var(--primary); font-weight: 800; }
+    .flow-step strong { display: block; margin-bottom: 2px; }
+    .flow-step p { margin: 0; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin: 16px 0 20px; font-size: .94rem; }
+    th, td { padding: 12px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    th { background: #f1f5f9; }
+    .tag { display: inline-block; margin: 4px 5px 4px 0; padding: 4px 10px; border-radius: 999px; background: #eef2ff; color: #3730a3; font-size: .78rem; font-weight: 700; }
+    footer { padding: 25px 10px 5px; color: var(--muted); text-align: center; font-size: .88rem; }
+    @media (max-width: 850px) {
+      .content-grid { grid-template-columns: 1fr; }
+      aside { position: static; }
+      aside nav { columns: 2; }
+    }
+    @media (max-width: 560px) {
+      .layout { padding: 15px 10px; }
+      .hero { padding: 28px 22px; }
+      article { padding: 22px 17px; }
+      .jwt-parts { grid-template-columns: 1fr; }
+      aside nav { columns: 1; }
+      table { display: block; overflow-x: auto; white-space: nowrap; }
+    }
+    @media print {
+      body { background: white; }
+      .layout { max-width: none; padding: 0; }
+      .hero { border-radius: 0; box-shadow: none; print-color-adjust: exact; }
+      .content-grid { display: block; }
+      aside { display: none; }
+      article { margin-top: 15px; box-shadow: none; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <header class="hero">
+      <p class="eyebrow">Backend Development · Authentication</p>
+      <h1>What Is a Token? Access Token &amp; Refresh Token Explained with Working Code</h1>
+      <p>A beginner-friendly, practical guide to JWT authentication using Node.js and Express — from the basic concepts to login, protected routes, token refresh, logout, and React integration.</p>
+      <div class="meta">
+        <span>Beginner friendly</span><span>Node.js + Express</span><span>JWT</span><span>Practical example</span>
+      </div>
+    </header>
+
+    <div class="content-grid">
+      <aside>
+        <h2>In this blog</h2>
+        <nav>
+          <a href="#intro">Introduction</a>
+          <a href="#token">1. What is a Token?</a>
+          <a href="#jwt">2. What is JWT?</a>
+          <a href="#access">3. Access Token</a>
+          <a href="#refresh">4. Refresh Token</a>
+          <a href="#difference">5. Comparison</a>
+          <a href="#flow">6. How they work together</a>
+          <a href="#setup">7. Project setup</a>
+          <a href="#backend">8. Working backend code</a>
+          <a href="#test">9. Test with Postman</a>
+          <a href="#react">10. React integration</a>
+          <a href="#security">11. Security practices</a>
+          <a href="#conclusion">12. Conclusion</a>
+        </nav>
+      </aside>
+
+      <article>
+        <section id="intro">
+          <h2>Introduction</h2>
+          <p>Authentication and authorization are important parts of modern web applications. When you log in to an application, the server needs a reliable way to recognize you on later requests.</p>
+          <p>One common approach is <strong>token-based authentication</strong>. After a successful login, the server issues a token. The client presents that token when it requests protected data.</p>
+          <p>In this blog, you will learn what tokens and JWTs are, how access and refresh tokens differ, and how to build a small working example with Node.js, Express, and JSON Web Token.</p>
+        </section>
+
+        <section id="token">
+          <h2>1. What is a Token?</h2>
+          <p>A token is a piece of data that a server issues to a client and later checks to authenticate a request or authorize an action. You can think of it as a temporary digital pass.</p>
+          <ol>
+            <li>The user enters their login credentials.</li>
+            <li>The server verifies those credentials.</li>
+            <li>If they are correct, the server issues a token.</li>
+            <li>The client sends the token with requests to protected endpoints.</li>
+            <li>The server validates the token before returning protected information.</li>
+          </ol>
+          <p>A token is not the user's password. It is a credential that must be protected because someone who steals a valid token may be able to use it.</p>
+        </section>
+
+        <section id="jwt">
+          <h2>2. What is JWT?</h2>
+          <p><strong>JWT</strong> stands for <strong>JSON Web Token</strong>. It is a standard format (RFC 7519) for representing claims as a JSON object that can be digitally signed and verified.</p>
+          <p>A signed JWT commonly has three Base64URL-encoded parts separated by dots:</p>
+          <div class="jwt-parts">
+            <div class="jwt-part header-part"><strong>Header</strong><span>Token type and signing algorithm</span></div>
+            <div class="jwt-part payload-part"><strong>Payload</strong><span>Claims such as user ID and role</span></div>
+            <div class="jwt-part signature-part"><strong>Signature</strong><span>Helps verify integrity</span></div>
+          </div>
+          <pre><code>xxxxx.yyyyy.zzzzz</code></pre>
+          <h3>Header example</h3>
+          <pre><code>{
+  "alg": "HS256",
+  "typ": "JWT"
+}</code></pre>
+          <h3>Payload example</h3>
+          <pre><code>{
+  "userId": "123",
+  "role": "user"
+}</code></pre>
+          <div class="callout warning"><strong>Important:</strong> A normal signed JWT is encoded, not encrypted. Anyone who obtains it can usually decode and read its payload. Do not put passwords, secrets, or sensitive personal data in a JWT.</div>
+        </section>
+
+        <section id="access">
+          <h2>3. What is an Access Token?</h2>
+          <p>An <strong>Access Token</strong> is a credential that the client sends to access protected API endpoints. The server validates it and, if it is valid and authorized, allows the request.</p>
+          <p>For example, a client might send:</p>
+          <pre><code>Authorization: Bearer YOUR_ACCESS_TOKEN</code></pre>
+          <p>Access tokens are generally short-lived. A common learning example is 15 minutes, although the correct lifetime depends on the application's security requirements.</p>
+        </section>
+
+        <section id="refresh">
+          <h2>4. What is a Refresh Token?</h2>
+          <p>A <strong>Refresh Token</strong> is a longer-lived credential used to obtain a new access token after the current access token expires. It lets the user continue a session without entering their password each time.</p>
+          <ol>
+            <li>The access token expires.</li>
+            <li>The client sends its refresh token to a refresh endpoint.</li>
+            <li>The server verifies the refresh token and checks whether it is still active.</li>
+            <li>If valid, the server issues a new access token. A robust design also rotates the refresh token.</li>
+          </ol>
+          <p>A refresh token is especially sensitive. In browser applications, an HttpOnly, Secure cookie is a common storage choice, with appropriate SameSite and CSRF protections.</p>
+        </section>
+
+        <section id="difference">
+          <h2>5. Access Token vs Refresh Token</h2>
+          <table>
+            <thead><tr><th>Feature</th><th>Access Token</th><th>Refresh Token</th></tr></thead>
+            <tbody>
+              <tr><td>Purpose</td><td>Access protected APIs</td><td>Obtain a new access token</td></tr>
+              <tr><td>Lifetime</td><td>Short-lived</td><td>Longer-lived</td></tr>
+              <tr><td>Example lifetime</td><td>15 minutes</td><td>7 days</td></tr>
+              <tr><td>Sent to</td><td>Protected API endpoints</td><td>Refresh endpoint only</td></tr>
+              <tr><td>Typical browser handling</td><td>Keep in memory where practical</td><td>HttpOnly, Secure cookie</td></tr>
+              <tr><td>Security concern</td><td>Limit exposure with a short lifetime</td><td>Protect, rotate, and revoke it</td></tr>
+            </tbody>
+          </table>
+          <p class="muted">The lifetimes above are illustrative examples, not universal rules.</p>
+        </section>
+
+        <section id="flow">
+          <h2>6. How Access Token and Refresh Token Work Together</h2>
+          <p>Access Tokens and Refresh Tokens work together to keep users logged in while protecting access to private APIs.</p>
+          <div class="flow">
+            <div class="flow-step"><span class="num">1</span><div><strong>User Login</strong><p>The user enters their email address and password in the application.</p></div></div>
+            <div class="flow-step"><span class="num">2</span><div><strong>Server Verification</strong><p>The server checks the submitted credentials against the user's account.</p></div></div>
+            <div class="flow-step"><span class="num">3</span><div><strong>Generate Tokens</strong><p>If the credentials are valid, the server creates an Access Token (for example, 15 minutes) and a Refresh Token (for example, 7 days).</p></div></div>
+            <div class="flow-step"><span class="num">4</span><div><strong>Access a Protected API</strong><p>The client sends the Access Token with API requests. The server verifies it before returning protected data.</p></div></div>
+            <div class="flow-step"><span class="num">5</span><div><strong>Access Token Expires</strong><p>When the Access Token expires, the server rejects the protected request. The user does not need to enter their password again.</p></div></div>
+            <div class="flow-step"><span class="num">6</span><div><strong>Refresh Token Request</strong><p>The client sends its Refresh Token to the refresh endpoint. The server validates it and checks that it has not been revoked or reused.</p></div></div>
+            <div class="flow-step"><span class="num">7</span><div><strong>Generate a New Access Token</strong><p>If the Refresh Token is valid, the server issues a new Access Token. A secure system may also rotate the Refresh Token.</p></div></div>
+          </div>
+          <div class="callout success"><strong>Result:</strong> The user can continue using the application without logging in again, as long as the Refresh Token remains valid.</div>
+        </section>
+
+        <section id="setup">
+          <h2>7. Project Setup</h2>
+          <p>Now let's create a small Express server that demonstrates login, a protected route, refresh, and logout.</p>
+          <h3>Install dependencies</h3>
+          <pre><code>mkdir jwt-auth
+cd jwt-auth
+npm init -y
+npm install express jsonwebtoken cookie-parser dotenv cors
+npm install --save-dev nodemon</code></pre>
+          <p>In <code>package.json</code>, set the module type and development script:</p>
+          <pre><code>{
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon server.js"
+  }
+}</code></pre>
+          <h3>Create a .env file</h3>
+          <pre><code>PORT=3000
+ACCESS_TOKEN_SECRET=replace_with_a_long_random_secret
+REFRESH_TOKEN_SECRET=use_a_different_long_random_secret
+CLIENT_URL=http://localhost:5173</code></pre>
+          <div class="callout warning">Use different, high-entropy secrets for access and refresh tokens. Keep <code>.env</code> out of Git and never expose these secrets in frontend code.</div>
+        </section>
+
+        <section id="backend">
+          <h2>8. Complete Working Backend Code</h2>
+          <p>Create <code>server.js</code>. This learning demo uses one hard-coded user and an in-memory refresh-token store, so you can test the flow without MongoDB.</p>
+          <p><strong>Demo login:</strong> <code>test@gmail.com</code> / <code>123456</code></p>
+          <pre><code>import express from "express";
+import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+import { randomUUID } from "node:crypto";
+
+dotenv.config();
+
+const app = express();
+
+app.use(express.json());
+app.use(cookieParser());
+
+app.use(cors({
+  origin: process.env.CLIENT_URL,
+  credentials: true
+}));
+
+// Demo user only. Replace this with a database lookup.
+const user = {
+  id: "123",
+  email: "test@gmail.com",
+  password: "123456",
+  role: "user"
+};
+
+// Demo-only storage. Use persistent database storage in production.
+const refreshTokens = new Map();
+
+const createAccessToken = (user) => {
+  return jwt.sign(
+    { userId: user.id, role: user.role },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
+};
+
+const createRefreshToken = (user) => {
+  return jwt.sign(
+    { userId: user.id },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: "7d",
+      jwtid: randomUUID()
+    }
+  );
+};
+
+const cookieOptions = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+  path: "/api/auth"
+};
+
+// LOGIN
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (email !== user.email || password !== user.password) {
+    return res.status(401).json({
+      message: "Invalid email or password"
+    });
+  }
+
+  const accessToken = createAccessToken(user);
+  const refreshToken = createRefreshToken(user);
+
+  refreshTokens.set(user.id, refreshToken);
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+
+  return res.json({
+    message: "Login successful",
+    accessToken
+  });
+});
+
+// ACCESS TOKEN MIDDLEWARE
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader?.startsWith("Bearer ")) {
+    return res.status(401).json({
+      message: "Access token required"
+    });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    req.user = jwt.verify(
+      token,
+      process.env.ACCESS_TOKEN_SECRET
+    );
+    next();
+  } catch (error) {
+    return res.status(401).json({
+      message: "Invalid or expired access token"
+    });
+  }
+};
+
+// PROTECTED ROUTE
+app.get("/api/user/profile", authenticate, (req, res) => {
+  return res.json({
+    message: "Protected profile accessed successfully",
+    user: req.user
+  });
+});
+
+// REFRESH ACCESS TOKEN
+app.post("/api/auth/refresh", (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (!token) {
+    return res.status(401).json({
+      message: "Refresh token missing"
+    });
+  }
+
+  try {
+    const decoded = jwt.verify(
+      token,
+      process.env.REFRESH_TOKEN_SECRET
+    );
+
+    // Check that this is the currently active refresh token.
+    if (refreshTokens.get(decoded.userId) !== token) {
+      return res.status(403).json({
+        message: "Refresh token revoked or reused"
+      });
+    }
+
+    const newAccessToken = createAccessToken(user);
+    const newRefreshToken = createRefreshToken(user);
+
+    // Rotate the refresh token.
+    refreshTokens.set(user.id, newRefreshToken);
+    res.cookie("refreshToken", newRefreshToken, cookieOptions);
+
+    return res.json({
+      message: "Token refreshed successfully",
+      accessToken: newAccessToken
+    });
+  } catch (error) {
+    return res.status(403).json({
+      message: "Invalid or expired refresh token"
+    });
+  }
+});
+
+// LOGOUT
+app.post("/api/auth/logout", (req, res) => {
+  const token = req.cookies.refreshToken;
+
+  if (token) {
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.REFRESH_TOKEN_SECRET
+      );
+
+      if (refreshTokens.get(decoded.userId) === token) {
+        refreshTokens.delete(decoded.userId);
+      }
+    } catch (error) {
+      // Cookie may already be expired or invalid.
+    }
+  }
+
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/api/auth"
+  });
+
+  return res.json({
+    message: "Logged out successfully"
+  });
+});
+
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(\`Server running on port \${PORT}\`);
+});</code></pre>
+          <h3>Start the server</h3>
+          <pre><code>npm run dev</code></pre>
+          <p>You should see: <code>Server running on port 3000</code>.</p>
+          <div class="callout warning"><strong>Demo limitations:</strong> The hard-coded password is plain text, the refresh-token Map is lost when the server restarts, and it supports only one active refresh token per demo user. For production, use a database, hash passwords with bcrypt or Argon2, store hashed refresh tokens per session, and implement appropriate CSRF protection.</div>
+        </section>
+
+        <section id="test">
+          <h2>9. Test the APIs Using Postman</h2>
+          <h3>A. Login</h3>
+          <p><span class="tag">POST</span> <code>http://localhost:3000/api/auth/login</code></p>
+          <p>Choose Body → raw → JSON:</p>
+          <pre><code>{
+  "email": "test@gmail.com",
+  "password": "123456"
+}</code></pre>
+          <p>The response contains an access token. Postman should also save the refresh-token cookie for localhost.</p>
+          <h3>B. Access the protected profile</h3>
+          <p><span class="tag">GET</span> <code>http://localhost:3000/api/user/profile</code></p>
+          <p>Set this header using the access token returned by login:</p>
+          <pre><code>Authorization: Bearer YOUR_ACCESS_TOKEN</code></pre>
+          <h3>C. Refresh the access token</h3>
+          <p><span class="tag">POST</span> <code>http://localhost:3000/api/auth/refresh</code></p>
+          <p>No body is required. Send the refresh-token cookie received during login. The response returns a new access token and rotates the refresh cookie.</p>
+          <h3>D. Logout</h3>
+          <p><span class="tag">POST</span> <code>http://localhost:3000/api/auth/logout</code></p>
+          <p>The server invalidates the active demo refresh token and clears the cookie. The already-issued access token can remain valid until it expires; production systems may add access-token revocation when immediate logout is required.</p>
+        </section>
+
+        <section id="react">
+          <h2>10. React Integration Using Axios</h2>
+          <p>Install Axios in your React application:</p>
+          <pre><code>npm install axios</code></pre>
+          <p>Create <code>api.js</code>. This simple example keeps the access token in memory and relies on the browser to send the HttpOnly refresh cookie.</p>
+          <pre><code>import axios from "axios";
+
+const api = axios.create({
+  baseURL: "http://localhost:3000/api",
+  withCredentials: true
+});
+
+let accessToken = null;
+
+export const setAccessToken = (token) => {
+  accessToken = token;
+};
+
+// Attach access token to API requests.
+api.interceptors.request.use((config) => {
+  if (accessToken) {
+    config.headers.Authorization = \`Bearer \${accessToken}\`;
+  }
+
+  return config;
+});
+
+// Refresh once after an access-token failure.
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes("/auth/")
+    ) {
+      originalRequest._retry = true;
+
+      try {
+        const response = await api.post("/auth/refresh");
+        const newToken = response.data.accessToken;
+
+        setAccessToken(newToken);
+        originalRequest.headers.Authorization =
+          \`Bearer \${newToken}\`;
+
+        return api(originalRequest);
+      } catch (refreshError) {
+        setAccessToken(null);
+        return Promise.reject(refreshError);
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default api;</code></pre>
+          <h3>Login example</h3>
+          <pre><code>import api, { setAccessToken } from "./api";
+
+async function login() {
+  const response = await api.post("/auth/login", {
+    email: "test@gmail.com",
+    password: "123456"
+  });
+
+  setAccessToken(response.data.accessToken);
+}</code></pre>
+          <h3>Call a protected API</h3>
+          <pre><code>async function getProfile() {
+  const response = await api.get("/user/profile");
+  console.log(response.data);
+}</code></pre>
+          <div class="callout warning"><strong>React note:</strong> In-memory access tokens disappear on a page reload. A real app should restore the session by calling the refresh endpoint during app initialization. Also handle simultaneous 401 responses with a single shared refresh operation, and configure CSRF protection for cookie-based refresh requests.</div>
+        </section>
+
+        <section id="security">
+          <h2>11. Important Security Practices</h2>
+          <ul>
+            <li>Never store user passwords in plain text. Use bcrypt or Argon2 with appropriate parameters.</li>
+            <li>Never expose JWT signing secrets in frontend code or public repositories.</li>
+            <li>Keep access tokens short-lived.</li>
+            <li>Protect refresh tokens, commonly with HttpOnly and Secure cookies in browser applications.</li>
+            <li>Use HTTPS in production.</li>
+            <li>Rotate refresh tokens and detect reuse of old tokens.</li>
+            <li>Store hashed refresh tokens in persistent server-side storage and support revocation.</li>
+            <li>Use appropriate CSRF defenses when authentication relies on cookies.</li>
+            <li>Validate token claims and enforce authorization on every protected endpoint.</li>
+          </ul>
+        </section>
+
+        <section id="conclusion">
+          <h2>12. Conclusion</h2>
+          <p>Token-based authentication is widely used to protect APIs and manage user sessions in modern web applications.</p>
+          <ul>
+            <li><strong>Token:</strong> A credential used to authenticate or authorize requests.</li>
+            <li><strong>JWT:</strong> A standard format for carrying signed claims.</li>
+            <li><strong>Access Token:</strong> Used to access protected APIs.</li>
+            <li><strong>Refresh Token:</strong> Used to obtain a new access token without asking the user to log in again.</li>
+          </ul>
+          <p>Practice the backend flow with Postman first. Then connect it to React and, after understanding the basics, replace the demo user and in-memory store with MongoDB and persistent session management.</p>
+          <p><strong>Happy Coding! 🚀</strong></p>
+          <h3>Suggested LinkedIn hashtags</h3>
+          <p class="muted">#NodeJS #ExpressJS #JWT #Authentication #AccessToken #RefreshToken #WebDevelopment #MERNStack #JavaScript #BackendDevelopment</p>
+        </section>
+      </article>
+    </div>
+    <footer>Learning resource · JWT Authentication with Node.js and Express</footer>
+  </div>
+</body>
+</html>
